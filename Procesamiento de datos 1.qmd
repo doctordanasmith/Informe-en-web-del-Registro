@@ -1,0 +1,498 @@
+---
+title: "Informe anual del Registro Poblacional de Cáncer del Partido de General Pueyrredon"
+format: 
+  dashboard:
+    scrolling: false
+
+editor: visual
+logo: Baner nuevo Registro 2022.png
+nav-buttons: 
+      - icon: hospital (1).svg
+        href: https://ine.gov.ar/index.php/otrasareas/regcancer
+        target: _blank
+      - icon: envelope.svg
+        href: rpc@ine.gov.ar
+        target: _blank
+---
+
+```{r Graf, echo=FALSE, message=FALSE, warning=FALSE}
+
+library(tidyverse)
+
+library(flextable)
+
+library(janitor)
+
+library(cowplot)
+
+library(patchwork)
+
+library(gtsummary)
+
+library(forcats)
+
+library(plotly)
+
+library(knitr)
+
+Base <- read_csv2("Base.csv") 
+
+Base <- Base|>  
+  mutate (SITIO_DE_PRIMARIO = case_when(str_detect(string = Topografía, pattern = "^0") ~ "Labio, cavidad oral, glándulas salivales y faringe",
+                                        str_detect(string = Topografía, pattern = "^11") ~ "Labio, cavidad oral, glándulas salivales y faringe",
+                                        str_detect(string = Topografía, pattern = "^12") ~ "Labio, cavidad oral, glándulas salivales y faringe",
+                                        str_detect(string = Topografía, pattern = "^13") ~ "Labio, cavidad oral, glándulas salivales y faringe",
+                                        str_detect(string = Topografía, pattern = "^14") ~ "Labio, cavidad oral, glándulas salivales y faringe",
+                                        str_detect(string = Topografía, pattern = "^15") ~ "Esófago",
+                                        str_detect(string = Topografía, pattern = "^16") ~ "Estómago",
+                                        str_detect(string = Topografía, pattern = "^17") ~ "Intestino delgado",
+                                        str_detect(string = Topografía, pattern = "^18") ~ "Colorrectal",
+                                        str_detect(string = Topografía, pattern = "^19") ~ "Colorrectal",
+                                        str_detect(string = Topografía, pattern = "^20") ~ "Colorrectal",
+                                        str_detect(string = Topografía, pattern = "^21") ~ "Ano y conducto anal",
+                                        str_detect(string = Topografía, pattern = "^22") ~ "Hígado y vías biliares intrahepáticas",
+                                        str_detect(string = Topografía, pattern = "^23") ~ "Vesícula biliar",
+                                        str_detect(string = Topografía, pattern = "^24") ~ "Otras partes y las no especificadas de las vías biliares",
+                                        str_detect(string = Topografía, pattern = "^25") ~ "Páncreas",
+                                        str_detect(string = Topografía, pattern = "^26") ~ "Otras localizaciones y las mal definidas del aparato digestivo",
+                                        str_detect(string = Topografía, pattern = "^300") ~ "Cavidad nasal",
+                                        str_detect(string = Topografía, pattern = "^301") ~ "Oído medio",
+                                        str_detect(string = Topografía, pattern = "^31") ~ "Senos paranasales",
+                                        str_detect(string = Topografía, pattern = "^32") ~ "Laringe",
+                                        str_detect(string = Topografía, pattern = "^33") ~ "Tráquea",
+                                        str_detect(string = Topografía, pattern = "^34") ~ "Bronquios y Pulmón",
+                                        str_detect(string = Topografía, pattern = "^37") ~ "Timo",
+                                        str_detect(string = Topografía, pattern = "^38") ~ "Corazón, mediastino y pleura",
+                                        str_detect(string = Topografía, pattern = "^39") ~ "Otros sitios y los mal definidos del sistema respiratrio y los órganos intratorácicos",
+                                        str_detect(string = Topografía, pattern = "^40") ~ "Huesos, articulaciones y cartílago articular",
+                                        str_detect(string = Topografía, pattern = "^41") ~ "Huesos, articulaciones y cartílago articular",
+                                        str_detect(string = Topografía, pattern = "^42") ~ "Sistemas hematopoyético y reticuloendotelial",
+                                        str_detect(string = Topografía, pattern = "^44") != str_detect(string = `Morfología (desc)`, pattern = "melanoma") ~ "Piel no melanoma",
+                                        str_detect(string = `Morfología (desc)`, pattern = "melanoma") ~ "Melanoma",
+                                        str_detect(string = Topografía, pattern = "^47") ~ "Nervios periféricos y sistema nervioso autónomo",
+                                        str_detect(string = Topografía, pattern = "^48") ~ "Peritoneo y retroperitoneo",
+                                        str_detect(string = Topografía, pattern = "^49") ~ "Tejido conjuntivo, subcutáneo y de otros tejidos blandos",
+                                        str_detect(string = Topografía, pattern = "^50") ~ "Mama",
+                                        str_detect(string = Topografía, pattern = "^51") ~ "Vulva",
+                                        str_detect(string = Topografía, pattern = "^52") ~ "Vagina",
+                                        str_detect(string = Topografía, pattern = "^53") ~ "Cuello uterino",
+                                        str_detect(string = Topografía, pattern = "^54") ~ "Utero",
+                                        str_detect(string = Topografía, pattern = "^55") ~ "Utero",
+                                        str_detect(string = Topografía, pattern = "^56") ~ "Ovario",
+                                        str_detect(string = Topografía, pattern = "^57") ~ "Otros órganos genitales femeninos y los no especificados",
+                                        str_detect(string = Topografía, pattern = "^58") ~ "Placenta",
+                                        str_detect(string = Topografía, pattern = "^60") ~ "Pene",
+                                        str_detect(string = Topografía, pattern = "^61") ~ "Próstata",
+                                        str_detect(string = Topografía, pattern = "^62") ~ "Testículos",
+                                        str_detect(string = Topografía, pattern = "^63") ~ "Otros órganos genitales masculinos y los no especificados",
+                                        str_detect(string = Topografía, pattern = "^64") ~ "Riñón",
+                                        str_detect(string = Topografía, pattern = "^65") ~ "Vejiga, uréteres o pelvis renal",
+                                        str_detect(string = Topografía, pattern = "^66") ~ "Vejiga, uréteres o pelvis renal",
+                                        str_detect(string = Topografía, pattern = "^67") ~ "Vejiga, uréteres o pelvis renal",
+                                        str_detect(string = Topografía, pattern = "^68") ~ "Otros órganos urinarios y los no especificados",
+                                        str_detect(string = Topografía, pattern = "^69") ~ "Encéfalo, ojo y otras partes del sistema nervioso central",
+                                        str_detect(string = Topografía, pattern = "^70") ~ "Encéfalo, ojo y otras partes del sistema nervioso central",
+                                        str_detect(string = Topografía, pattern = "^71") ~ "Encéfalo, ojo y otras partes del sistema nervioso central",
+                                        str_detect(string = Topografía, pattern = "^72") ~ "Encéfalo, ojo y otras partes del sistema nervioso central",
+                                        str_detect(string = Topografía, pattern = "^73") ~ "Tiroides",
+                                        str_detect(string = Topografía, pattern = "^74") ~ "Suprarrenales",
+                                        str_detect(string = Topografía, pattern = "^75") ~ "Otras glándulas endocrinas y estructuras afines",
+                                        str_detect(string = Topografía, pattern = "^76") ~ "Sitios mal definidos de las distintas localizaciones",
+                                        str_detect(string = Topografía, pattern = "^77") ~ "Ganglios linfáticos",
+                                        str_detect(string = Topografía, pattern = "^80") ~ "Sitio primario desconocido")) |>    
+  mutate (AÑO = case_when(str_detect(string = `Fecha Diagnós.`, pattern = "^2018") ~ "2018",                         
+                          str_detect(string = `Fecha Diagnós.`, pattern = "^2019") ~ "2019",                          
+                          str_detect(string = `Fecha Diagnós.`, pattern = "^2020") ~ "2020",                          
+                          str_detect(string = `Fecha Diagnós.`, pattern = "^2021") ~ "2021",                         
+                          str_detect(string = `Fecha Diagnós.`, pattern = "^2022") ~ "2022" ))
+
+
+TOPOGRAFIAS_sin_multiples <- Base|> dplyr:: filter(AÑO %in% c("2018","2019","2020","2021","2022"))  
+
+TOPOGRAFIAS_sin_multiples <- TOPOGRAFIAS_sin_multiples|>   rename(SEXO = `Sexo (desc)`, EDAD = Edad)
+
+
+```
+
+```{r Gra, echo=FALSE, message=FALSE, warning=FALSE} }
+
+## TAbla totales por año
+
+Tabla_totales_por_año <- TOPOGRAFIAS_sin_multiples |> 
+ count(AÑO)|>   rename(Frecuencia = n)|>  
+  flextable()|>  autofit()|>   theme_zebra()|>  add_header(AÑO = "Total de casos de cáncer por año", Frecuencia = "Total de casos de cáncer por año")|>  merge_h(part = "header")|>  bold(part = "header")|>  colformat_num(j = "Frecuencia", big.mark = "")
+
+
+## TOTALES DE PERSONAS Y MEDIAS
+
+
+
+Total_personas <- TOPOGRAFIAS_sin_multiples|>  
+  count()
+
+Total_varones <- TOPOGRAFIAS_sin_multiples|>  
+  filter(SEXO == "Masculino")|>  
+  count()
+
+Porcentaje_varones <- TOPOGRAFIAS_sin_multiples|>  
+  count()|>   
+  mutate(Porc = round(100* Total_varones/ Total_personas, 1))|>  
+  select(Porc)
+
+Total_mujeres <- TOPOGRAFIAS_sin_multiples|>  
+  filter(SEXO == "Femenino")|>  
+  count()
+
+Porcentaje_mujeres <- TOPOGRAFIAS_sin_multiples|>  
+  count()|>   
+  mutate(Porc = round(100* Total_mujeres/ Total_personas, 1))|>  
+  select(Porc)
+
+media_edad_mujer <- round(mean(TOPOGRAFIAS_sin_multiples$EDAD[TOPOGRAFIAS_sin_multiples$SEXO == "Femenino"], na.rm = T),1)
+
+media_edad_hombre <- round(mean(TOPOGRAFIAS_sin_multiples$EDAD[TOPOGRAFIAS_sin_multiples$SEXO == "Masculino"], na.rm = T),1)
+
+desvio_edad_mujer <- round(sd(TOPOGRAFIAS_sin_multiples$EDAD[TOPOGRAFIAS_sin_multiples$SEXO == "Femenino"], na.rm = T),1)
+
+desvio_edad_hombre <- round(sd(TOPOGRAFIAS_sin_multiples$EDAD[TOPOGRAFIAS_sin_multiples$SEXO == "Masculino"], na.rm = T),1)
+
+
+## TABLAS DE PRIMARIOS POR AÑO
+
+tabla2018 <-TOPOGRAFIAS_sin_multiples|>  filter(AÑO == "2018")|> 
+  count(SITIO_DE_PRIMARIO, sort = T)|> 
+  rename(PRIMARIO = SITIO_DE_PRIMARIO, Frecuencia = n) 
+
+tabla2019 <- TOPOGRAFIAS_sin_multiples|>  filter(AÑO == "2019")|> 
+  count(SITIO_DE_PRIMARIO, sort = T)|> 
+  rename(PRIMARIO = SITIO_DE_PRIMARIO, Frecuencia = n) 
+
+tabla2020 <- TOPOGRAFIAS_sin_multiples|>  filter(AÑO == "2020")|> 
+  count(SITIO_DE_PRIMARIO, sort = T)|> 
+  rename(PRIMARIO = SITIO_DE_PRIMARIO, Frecuencia = n) 
+
+tabla2021 <-TOPOGRAFIAS_sin_multiples|>  filter(AÑO == "2021")|> 
+  count(SITIO_DE_PRIMARIO, sort = T)|> 
+  rename(PRIMARIO = SITIO_DE_PRIMARIO, Frecuencia = n) 
+
+tabla2022 <-TOPOGRAFIAS_sin_multiples|>  filter(AÑO == "2022")|> 
+  count(SITIO_DE_PRIMARIO, sort = T)|> 
+  rename(PRIMARIO = SITIO_DE_PRIMARIO, Frecuencia = n) 
+
+
+tabla2019[43:46,1] <- " "
+tabla2020[43:46,1] <- " "
+tabla2021[44:46,1] <- " "
+tabla2022[45:46,1] <- " "
+
+
+tabla <- bind_cols(tabla2018, tabla2019, tabla2020, tabla2021, tabla2022)|>  
+  flextable()|>  theme_zebra()|>  
+  delete_part(part = "header")|>  
+  fontsize(size = 5, part = "all")|>  
+  width(width = 0.5)|>  
+  add_header(PRIMARIO...1 = "Sitio Primario", Frecuencia...2 = "Frec.", PRIMARIO...3 = "Sitio Primario",  Frecuencia...4 = "Frec.", PRIMARIO...5 = "Sitio Primario", Frecuencia...6 = "Frec.", PRIMARIO...7 = "Sitio Primario", Frecuencia...8 = "Frec.", PRIMARIO...9 = "Sitio Primario",  Frecuencia...10 = "Frec.")|> 
+  add_header(PRIMARIO...1 = "2018", Frecuencia...2 = "2018", PRIMARIO...3 = "2019",  Frecuencia...4 = "2019", PRIMARIO...5 = "2020", Frecuencia...6 = "2020",PRIMARIO...7 = "2021", Frecuencia...8 = "2021", PRIMARIO...9 = "2022",  Frecuencia...10 = "2022", top =T)|>  
+  align(align = "center", part = "header")|>  
+  merge_h(part = "header")|>  
+  bold(bold = TRUE, part = "header")|>  
+  add_header(PRIMARIO...1 = "Número de casos de cáncer por año y según sitio de localización", Frecuencia...2 = "Número de casos de cáncer por año y según sitio de localización", PRIMARIO...3 = "Número de casos de cáncer por año y según sitio de localización", Frecuencia...4 = "Número de casos de cáncer por año y según sitio de localización", PRIMARIO...5 = "Número de casos de cáncer por año y según sitio de localización", Frecuencia...6 = "Número de casos de cáncer por año y según sitio de localización", PRIMARIO...7 = "Número de casos de cáncer por año y según sitio de localización", Frecuencia...8 = "Número de casos de cáncer por año y según sitio de localización", PRIMARIO...9 = "Número de casos de cáncer por año y según sitio de localización", Frecuencia...10 = "Número de casos de cáncer por año y según sitio de localización"
+  )|>  merge_h(part = "header")|>  bold(part = "header")|>  
+  align(align = "center", part = "header")
+
+
+nt_2018 <- TOPOGRAFIAS_sin_multiples|>  filter(AÑO == "2018")|>  nrow()
+
+n_2018 <- TOPOGRAFIAS_sin_multiples|>  filter(AÑO == "2018", SITIO_DE_PRIMARIO != "OTROS TIPOS DE CANCER")|>  nrow()
+
+
+nt_2019 <- TOPOGRAFIAS_sin_multiples|>  filter(AÑO == "2019")|>  nrow()
+
+n_2019 <- TOPOGRAFIAS_sin_multiples|>  filter(AÑO == "2019", SITIO_DE_PRIMARIO != "OTROS TIPOS DE CANCER")|>  nrow()
+
+
+nt_2020 <- TOPOGRAFIAS_sin_multiples|>  filter(AÑO == "2020")|>  nrow()
+
+n_2020 <- TOPOGRAFIAS_sin_multiples|>  filter(AÑO == "2020", SITIO_DE_PRIMARIO != "OTROS TIPOS DE CANCER")|>  nrow()
+
+nt_2021 <- TOPOGRAFIAS_sin_multiples|>  filter(AÑO == "2021")|>  nrow()
+
+n_2021 <- TOPOGRAFIAS_sin_multiples|>  filter(AÑO == "2021", SITIO_DE_PRIMARIO != "OTROS TIPOS DE CANCER")|>  nrow()
+
+nt_2022 <- TOPOGRAFIAS_sin_multiples|>  filter(AÑO == "2022")|>  nrow()
+
+n_2022 <- TOPOGRAFIAS_sin_multiples|>  filter(AÑO == "2022", SITIO_DE_PRIMARIO != "OTROS TIPOS DE CANCER")|>  nrow()
+
+
+
+```
+
+```{r Gra, echo=FALSE, message=FALSE, warning=FALSE} }
+
+## GRAFICOS DE 10 PRIMEROS POR AÑO
+
+graf1 <- TOPOGRAFIAS_sin_multiples|>  
+  filter(AÑO == "2018")|>  
+  count(SITIO_DE_PRIMARIO, sort = T)|>  
+  filter(SITIO_DE_PRIMARIO != "OTROS TIPOS DE CANCER" )|>  
+  slice(1:10)|>  
+  ggplot(aes(x = fct_rev(fct_reorder(SITIO_DE_PRIMARIO, n, min)), y = n,fill = SITIO_DE_PRIMARIO)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("violetred3",  "tomato2",  "turquoise","springgreen2","goldenrod","chocolate3","brown", "blue", "gray", "olivedrab")) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1))	+ 
+  scale_y_continuous(limits = c(0,1200), breaks = seq(0,1200, by = 300)) +
+  xlab("") +
+  ylab("Frecuencia") +
+  guides(fill = "none") +
+  labs(title = "Año 2018",
+       caption = paste("N = ", n_2018, " de ", nt_2018)) 
+
+
+
+graf2 <- TOPOGRAFIAS_sin_multiples|>  
+  filter(AÑO == "2019")|>  
+  count(SITIO_DE_PRIMARIO, sort = T)|>  
+  filter(SITIO_DE_PRIMARIO != "OTROS TIPOS DE CANCER" )|>  
+  slice(1:10)|>  
+  ggplot(aes(x = fct_rev(fct_reorder(SITIO_DE_PRIMARIO, n, min)), y = n,fill = SITIO_DE_PRIMARIO)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("violetred3",  "tomato2",  "turquoise","springgreen2","goldenrod","chocolate3","brown", "blue", "gray", "olivedrab")
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1))	+ 
+  scale_y_continuous(limits = c(0,1200), breaks = seq(0,1200, by = 300)) +
+  xlab("") +
+  ylab("Frecuencia") +
+  guides(fill = "none") +
+  labs(title = "Año 2019",
+       caption = paste("N = ", n_2019, " de ", nt_2019)) 
+
+
+graf3 <- TOPOGRAFIAS_sin_multiples|>  
+  filter(AÑO == "2020")|>  
+  count(SITIO_DE_PRIMARIO, sort = T)|>  
+  filter(SITIO_DE_PRIMARIO != "OTROS TIPOS DE CANCER" )|>  
+  slice(1:10)|>  
+  ggplot(aes(x = fct_rev(fct_reorder(SITIO_DE_PRIMARIO, n, min)), y = n,fill = SITIO_DE_PRIMARIO)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("violetred3",  "tomato2",  "turquoise","springgreen2","goldenrod","chocolate3","brown", "blue", "gray", "olivedrab")) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1))	+
+  scale_y_continuous(limits = c(0,1200), breaks = seq(0,1200, by = 300)) +
+  xlab("") +
+  ylab("Frecuencia") +
+  guides(fill = "none") +
+  labs(title = "Año 2020",
+       caption = paste("N = ", n_2020, " de ", nt_2020))  
+
+graf4 <- TOPOGRAFIAS_sin_multiples|>  
+  filter(AÑO == "2021")|>  
+  count(SITIO_DE_PRIMARIO, sort = T)|>  
+  filter(SITIO_DE_PRIMARIO != "OTROS TIPOS DE CANCER" )|>  
+  slice(1:10)|>  
+  ggplot(aes(x = fct_rev(fct_reorder(SITIO_DE_PRIMARIO, n, min)), y = n,fill = SITIO_DE_PRIMARIO)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("violetred3",  "tomato2",  "turquoise","springgreen2","goldenrod","chocolate3","brown", "blue", "gray", "olivedrab")
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1))	+ 
+  scale_y_continuous(limits = c(0,1200), breaks = seq(0,1200, by = 300)) +
+  xlab("") +
+  ylab("Frecuencia") +
+  guides(fill = "none") +
+  labs(title = "Año 2021",
+       caption = paste("N = ", n_2021, " de ", nt_2021)) 
+
+graf5 <- TOPOGRAFIAS_sin_multiples|>  
+  filter(AÑO == "2022")|>  
+  count(SITIO_DE_PRIMARIO, sort = T)|>  
+  filter(SITIO_DE_PRIMARIO != "OTROS TIPOS DE CANCER" )|>  
+  slice(1:10)|>  
+  ggplot(aes(x = fct_rev(fct_reorder(SITIO_DE_PRIMARIO, n, min)), y = n,fill = SITIO_DE_PRIMARIO)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("violetred3",  "tomato2",  "turquoise","springgreen2","goldenrod","chocolate3","brown", "blue", "gray", "olivedrab")
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1))	+ 
+  scale_y_continuous(limits = c(0,1200), breaks = seq(0,1200, by = 300)) +
+  xlab("") +
+  ylab("Frecuencia") +
+  guides(fill = "none") +
+  labs(title = "Año 2022",
+       caption = paste("N = ", n_2022, " de ", nt_2022)) 
+
+
+TABLA_PRIMARIO_POR_SEXO <- TOPOGRAFIAS_sin_multiples|>  select(SITIO_DE_PRIMARIO, SEXO)|>  
+  filter(SEXO != "Desc.")|>  
+  tbl_summary(by = SEXO,
+              statistic = list(all_categorical() ~ "{n} ({p}%)"),
+              digits = all_continuous() ~ 2,
+              label = SITIO_DE_PRIMARIO ~ "Sitio Primario",
+              missing_text = "S/D"
+  )|>  
+  modify_header(update = list(
+    label ~ "**Variable**"
+  ))|>  as_flex_table() 
+
+
+
+
+
+```
+
+```{r Gr, echo=FALSE, message=FALSE, warning=FALSE}
+
+## plotly
+
+graf1_p <- ggplotly(graf1)
+
+graf2_p <- ggplotly(graf2)
+
+graf3_p <- ggplotly(graf3)
+
+graf4_p <- ggplotly(graf4)
+
+graf5_p <- ggplotly(graf5)
+
+```
+
+# Valores
+
+## Row {height="10%"}
+
+```{r}
+#| content: valuebox 
+#| title: "Media de edad mujeres" 
+ 
+list(
+  icon = "",
+  color = "red",
+  value = media_edad_mujer
+)
+```
+
+```{r}
+#| content: valuebox 
+#| title: "Media de edad varones" 
+ 
+list(
+  icon = "",
+  color = "green",
+  value = media_edad_hombre
+)
+
+```
+
+```{r}
+#| content: valuebox 
+#| title: "Porcentaje de mujeres" 
+ 
+list(
+  icon = "",
+  color = "purple",
+  value = Porcentaje_mujeres
+)
+
+```
+
+```{r}
+#| content: valuebox 
+#| title: "Porcentaje de varones" 
+ 
+list(
+  icon = "",
+  color = "orange",
+  value = Porcentaje_varones
+)
+
+```
+
+## Row {height="90%"}
+
+## Column {width="50%"}
+
+```{r}
+#| fig-height: 4
+#| fig-width: 3
+
+graf5_p
+```
+
+## Column {width="50%"}
+
+```{r}
+
+#| fig-height: 4
+#| fig-width: 3
+
+Tabla
+
+```
+
+# Gráfico
+
+## Row {height="50%"}
+
+## Column {width = 34%}
+
+```{r}
+#| fig-height: 4
+#| fig-width: 3
+
+graf1_p
+
+
+```
+
+## Column {width = 33%}
+
+```{r}
+#| fig-height: 4
+#| fig-width: 3
+
+graf2_p
+
+
+```
+
+## Column {width = 33%}
+
+```{r}
+#| fig-height: 4
+#| fig-width: 3
+
+graf3_p
+
+
+```
+
+## Row {height="50%"}
+
+## Column {width = 34%}
+
+```{r}
+#| fig-height: 4
+#| fig-width: 3
+
+graf4_p
+
+
+```
+
+## Column {width = 33%}
+
+```{r}
+#| fig-height: 4
+#| fig-width: 3
+
+graf5_p
+
+
+```
+
+## Column {width = 33%}
+
+```{r}
+#| fig-height: 4
+#| fig-width: 3
+
+Tabla_totales_por_año
+
+
+```
